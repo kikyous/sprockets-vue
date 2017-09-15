@@ -1,6 +1,6 @@
 require 'minitest/autorun'
 require 'sprockets'
-require 'sprockets/vue'
+require 'rails-vue-loader'
 require 'execjs'
 require "coffee-script"
 require 'sass'
@@ -37,5 +37,12 @@ class TestVue < MiniTest::Test
     asset = @env['index.css'].to_s
     assert asset.match(/.search .icon-input/)
     assert asset.match(/.avatar/)
+  end
+
+  def test_sprockets_preprocessor
+    asset = @env['index_with_sprockets_require.js'].to_s
+    context = ExecJS.compile(asset)
+
+    assert_equal 'Hello World', context.eval("SuperFancyJavascriptPlugin.hello")
   end
 end
