@@ -12,7 +12,16 @@ module Sprockets::Vue
           CoffeeScript.compile(s, sourceMap: true, sourceFiles: [input[:source_path]], no_wrap: true)
         },
         'es6' => ->(s, input){
-          Babel::Transpiler.transform(data, {}) #TODO
+          opts = {
+            'sourceRoot' => input[:load_path],
+            'moduleRoot' => nil,
+            'filename' => input[:filename],
+            'filenameRelative' => input[:environment].split_subpath(input[:load_path], input[:filename])
+          }
+
+          result = Babel::Transpiler.transform(s, opts)
+
+          { 'js' => result['code'] }
         },
         nil => ->(s,input){ { 'js' => s } }
       }
@@ -30,7 +39,7 @@ module Sprockets::Vue
             map = result['sourceMap']
 
             output << "'object' != typeof VComponents && (this.VComponents = {});
-              var module = { exports: null };
+              var module = { exports: null }, exports = {};
               #{result['js']}; VComponents['#{name}'] = module.exports;"
           end
 
