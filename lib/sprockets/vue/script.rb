@@ -38,7 +38,18 @@ module Sprockets::Vue
             output << "VComponents['#{name.sub(/\.tpl$/, "")}'].template = '#{j template[:content]}';"
           end
 
-          { data: "#{warp(output.join)}", map: map }
+          result = {
+            data: "#{warp(output.join)}",
+            map: map
+          }
+
+          preprocessor_result = run_preprocessors(script, input)
+          if preprocessor_result
+            result[:required]     = preprocessor_result[:required] if preprocessor_result[:required].any?
+            result[:dependencies] = preprocessor_result[:dependencies] if preprocessor_result[:dependencies].any?
+          end
+          
+          result
         end
       end
 
@@ -51,6 +62,21 @@ module Sprockets::Vue
           self.name,
           VERSION,
         ].freeze
+      end
+
+    protected
+      #
+      # Enable use of sprockets directives by running the script content through already registered preprocessors
+      #
+      def run_preprocessors(source, input)
+        return unless source && source[:content] && input[:environment] && input[:environment].preprocessors["application/javascript"].try(:any?)
+        input[:environment].preprocessors["application/javascript"][0].call(
+          environment: input[:environment],
+          data: source[:content],
+          content_type: 'application/javascript',
+          filename: input[:filename],
+          metadata: {}
+        )
       end
     end
   end
